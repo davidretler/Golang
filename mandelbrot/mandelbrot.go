@@ -12,8 +12,8 @@ import (
 )
 
 func (m Image) ShowImage(s string) {
-	toimg, _ := os.Create("/home/david/golang/" + s + ".png") //Create the file to which we will save the image
-	png.Encode(toimg, m)                                      //Encode the image as a png
+	toimg, _ := os.Create("./" + s + ".png") //Create the file to which we will save the image
+	png.Encode(toimg, m)                     //Encode the image as a png
 }
 
 type Image struct{ Width, Height int } //Implement the image.Image interface
@@ -24,7 +24,7 @@ func HSVtoRGB(h, s, v int) (int, int, int) { //Convert HSV to RGB
 	vf := float64(v) / 100.0
 	cf := vf * sf
 	m := vf - cf
-	xf := 1 - math.Abs(math.Mod(hf/60.0, 2)-1)
+	xf := cf - cf*math.Abs(math.Mod(hf/60.0, 2)-1)
 	r, g, b := 0.0, 0.0, 0.0
 	if hf < 60 { //Piecewise function for converting HSV to RGB (source: Wikipedia)
 		r, g, b = cf, xf, 0.0
@@ -39,14 +39,13 @@ func HSVtoRGB(h, s, v int) (int, int, int) { //Convert HSV to RGB
 	} else {
 		r, g, b = cf, 0.0, xf
 	}
-	rf, gf, bf := int((r+m)*255), int((g+m)*255), int((b+m)*255)
-	return rf, gf, bf
+	return int((r + m) * 255), int((g + m) * 255), int((b + m) * 255)
 }
 
 func (m Image) Mandelbrot(x, y int) (int, int, int) {
 	x0 := float64(x)/float64(m.Width)*(rMax-rMin) + rMin  //Scale the pixel grid to the bounds of the Mandelbrot function
 	y0 := float64(y)/float64(m.Height)*(iMax-iMin) + iMin //Likewise for y axis
-	a := complex(float64(x0), float64(y0))                //Find complex number x+yi
+	a := complex(float64(x0), float64(y0))                //Use complex number x+yi
 	z := complex(0, 0)                                    //Initial seed value: 0+0i
 	i := 0
 	for ; cmplx.Abs(z) < 2 && i < iterations; i++ { //Continue until the absolute value passes 2 (indicating that the number diverges)
@@ -55,7 +54,7 @@ func (m Image) Mandelbrot(x, y int) (int, int, int) {
 	if i == iterations {
 		return HSVtoRGB(0, 0, 0)
 	}
-	return HSVtoRGB(int(math.Abs(float64(i*360.)+180)/float64(iterations)), 100, 100) //Color the area with hue related to "closeness" to the set, ie numbers the diverge slower have higher hue
+	return HSVtoRGB(int(math.Abs(float64(i*360.))/float64(iterations)), 100, 100) //Color the area with hue related to "closeness" to the set, ie numbers the diverge slower have higher hue
 }
 
 func (m Image) Bounds() image.Rectangle {
@@ -63,7 +62,7 @@ func (m Image) Bounds() image.Rectangle {
 }
 
 func (m Image) ColorModel() color.Model {
-	return color.RGBAModel //Use the RGBA color model (image/color does not have native support for HSV)
+	return color.RGBAModel //Use the RGBA color model (package image/color does not have native support for HSV)
 }
 
 func (m Image) At(x, y int) color.Color {
@@ -72,15 +71,14 @@ func (m Image) At(x, y int) color.Color {
 }
 
 var (
-	rMin = -2.5 //Bounds of the complex plane
-	rMax = 1.
-	iMin = -1.
-	iMax = 1.
+	rMin       = -2.5 //Bounds of the complex plane
+	rMax       = 1.
+	iMin       = -1.
+	iMax       = 1.
+	width      int
+	name       string
+	iterations int
 )
-
-var width int
-var name string
-var iterations int
 
 func init() {
 
