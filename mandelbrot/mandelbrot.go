@@ -1,6 +1,7 @@
 package main
 
 import (
+	"./convert"
 	"flag"
 	"fmt"
 	"image"
@@ -18,30 +19,6 @@ func (m Image) ShowImage(s string) {
 
 type Image struct{ Width, Height int } //Implement the image.Image interface
 
-func HSVtoRGB(h, s, v int) (int, int, int) { //Convert HSV to RGB
-	hf := float64(h)
-	sf := float64(s) / 100.0
-	vf := float64(v) / 100.0
-	cf := vf * sf
-	m := vf - cf
-	xf := cf - cf*math.Abs(math.Mod(hf/60.0, 2)-1)
-	r, g, b := 0.0, 0.0, 0.0
-	if hf < 60 { //Piecewise function for converting HSV to RGB (source: Wikipedia)
-		r, g, b = cf, xf, 0.0
-	} else if hf < 120 {
-		r, g, b = xf, cf, 0.0
-	} else if hf < 180 {
-		r, g, b = 0.0, cf, xf
-	} else if hf < 240 {
-		r, g, b = 0.0, xf, cf
-	} else if hf < 300 {
-		r, g, b = xf, 0.0, cf
-	} else {
-		r, g, b = cf, 0.0, xf
-	}
-	return int((r + m) * 255), int((g + m) * 255), int((b + m) * 255)
-}
-
 func (m Image) Mandelbrot(x, y int) (int, int, int) {
 	x0 := float64(x)/float64(m.Width)*(rMax-rMin) + rMin  //Scale the pixel grid to the bounds of the Mandelbrot function
 	y0 := float64(y)/float64(m.Height)*(iMax-iMin) + iMin //Likewise for y axis
@@ -52,9 +29,9 @@ func (m Image) Mandelbrot(x, y int) (int, int, int) {
 		z = z*z + a
 	}
 	if i == iterations {
-		return HSVtoRGB(0, 0, 0)
+		return 0, 0, 0
 	}
-	return HSVtoRGB(int(math.Abs(float64(i*360.))/float64(iterations)), 100, 100) //Color the area with hue related to "closeness" to the set, ie numbers the diverge slower have higher hue
+	return convert.HSVtoRGB(int(math.Abs(float64(i)*360.)/float64(iterations)), 100, 100) //Color the area with hue related to "closeness" to the set, ie numbers the diverge slower have higher hue
 }
 
 func (m Image) Bounds() image.Rectangle {
@@ -76,6 +53,7 @@ var (
 	iMin       = -1.
 	iMax       = 1.
 	width      int
+	height     int
 	name       string
 	iterations int
 )
@@ -89,7 +67,7 @@ func init() {
 }
 
 func main() {
-	height := int(float64(width) * (iMax - iMin) / (rMax - rMin))
+	height = int(float64(width) * (iMax - iMin) / (rMax - rMin))
 	m := Image{width, height}
 	if name == "" {
 		fmt.Println("Please give the image a name!")
